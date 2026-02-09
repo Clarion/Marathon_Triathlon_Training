@@ -1,1 +1,13 @@
-test
+google-genai
+markdown2
+weasyprint
+biopython
+requests
+python-dotenv
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+cffi          # Essential for WeasyPrint's PDF engine
+lxml          # Helps Biopython and WeasyPrint parse complex XML/HTML
+atproto
+Pillow

@@ -36,9 +36,6 @@ jobs:
       # ---------------------------------------------------------
       # 1. MORNING RESEARCH - LAB 
       # ---------------------------------------------------------
-      - name: Run Lab Research Briefing
-        if: github.event.schedule == '7 4 * * *' || github.event_name == 'workflow_dispatch'
-        run: python main_lab.py
 
       - name: Run General Social Update
         if: github.event.schedule == '7 11 * * *' || github.event_name == 'workflow_dispatch'

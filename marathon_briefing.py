@@ -208,7 +208,7 @@ def generate_pdf(markdown_text):
     """
     
     today_str = datetime.date.today().strftime('%Y-%m-%d')
-    filename = f"Daily_mtDNA_Briefing_{today_str}.pdf"
+    filename = f"Marathon_Briefing_{today_str}.pdf"
     
     # Generate PDF
     HTML(string=html_template).write_pdf(filename)

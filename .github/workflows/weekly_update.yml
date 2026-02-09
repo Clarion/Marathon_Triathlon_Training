@@ -1,4 +1,4 @@
-name: mtDNA Lab Intelligence Pipeline
+name: Marathon Intelligence Pipeline
 
 on:
   schedule:

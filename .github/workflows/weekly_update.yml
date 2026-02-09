@@ -1,1 +1,46 @@
-test
+name: mtDNA Lab Intelligence Pipeline
+
+on:
+  schedule:
+    - cron: '7 4 * * *'   #(Morning Research - Lab)
+  workflow_dispatch:      # Allows manual trigger
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+  GDRIVE_FOLDER_LINK: ${{ secrets.GDRIVE_FOLDER_LINK }}
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0 libpangocairo-1.0-0
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # ---------------------------------------------------------
+      # 1. MORNING RESEARCH - LAB 
+      # ---------------------------------------------------------
+      - name: Run Lab Research Briefing
+        if: github.event.schedule == '7 4 * * *' || github.event_name == 'workflow_dispatch'
+        run: python main_lab.py
+
+      - name: Run General Social Update
+        if: github.event.schedule == '7 11 * * *' || github.event_name == 'workflow_dispatch'
+        run: python marathon_briefing.py

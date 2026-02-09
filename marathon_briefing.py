@@ -50,7 +50,7 @@ def fetch_pubmed_data():
     print("📡 Querying PubMed...")
     Entrez.email = EMAIL
     date_tag = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y/%m/%d")
-    query = f"{SEARCH_TERM_PUBMED} AND (("{date_tag}"[Date - Publication] : "3000"[Date - Publication]))"
+    query = f'{SEARCH_TERM_PUBMED} AND (("{date_tag}"[Date - Publication] : "3000"[Date - Publication]))'
     try:
         handle = Entrez.esearch(db="pubmed", term=query, retmax=40)
         record = Entrez.read(handle)

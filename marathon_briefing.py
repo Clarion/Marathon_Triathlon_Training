@@ -234,16 +234,6 @@ def upload_to_drive(file_path, creds):
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     return file.get('id')
 
-def upload_to_mattermost(file_id):
-    print("💬 Notifying Mattermost...")
-    webhook_url = os.getenv("MATTERMOST_WEBHOOK_URL")
-    if not webhook_url: return
-    download_link = f"https://drive.google.com/uc?export=download&id={file_id}"
-    payload = {"text": f"✅ **New mtDNA Briefing Ready!**\n📅 Date: {datetime.date.today()}\n📥 **[DOWNLOAD PDF DIRECTLY]({download_link})**\n📂 [Browse Folder]({os.getenv('GDRIVE_FOLDER_LINK')})"}
-    try:
-        requests.post(webhook_url, json=payload)
-    except Exception as e:
-        print(f"Mattermost Error: {e}")
 
 
 # --- BLUESKY FUNCTIONS ---
@@ -278,30 +268,6 @@ def crop_for_social(b64_string):
             break
         quality -= 5
     return img_byte_arr.getvalue()
-
-def post_to_bluesky(note_text, pdf_url, podcast_url, b64_banner):
-    handle = os.getenv("BLUESKY_HANDLE")
-    password = os.getenv("BLUESKY_PASSWORD")
-    if not handle or not password:
-        print("⚠️ Bluesky credentials missing. Skipping post.")
-        return
-
-    client = Client()
-    client.login(handle, password)
-
-    tb = client_utils.TextBuilder()
-    tb.text(f"{note_text.strip()}\n\n")
-    tb.link("📄 Full Dossier", pdf_url)
-    tb.text(" | ")
-    tb.link("🎙️ Podcast", podcast_url)
-    tb.text("\n\n#marathon")
-
-    img_binary = crop_for_social(b64_banner)
-    upload = client.upload_blob(img_binary)
-    images_embed = {"$type": "app.bsky.embed.images", "images": [{"alt": "mtDNA Daily Research Digest", "image": upload.blob}]}
-
-    client.post(text=tb, embed=images_embed)
-    print("✨ Successfully posted to Bluesky.")
 
 
 if __name__ == "__main__":
@@ -355,55 +321,13 @@ if __name__ == "__main__":
         
         max_retries = 2
         analysis_text = ""
-        bluesky_note = "Check out today's mtDNA research briefing!" # Default fallback
-        
+
         for attempt in range(max_retries):
             try:
                 # 1. PRIMARY BRIEFING GENERATION
                 response = client.models.generate_content(model="gemini-flash-latest", contents=prompt)
                 current_text = getattr(response, 'text', "")
                 
-                if current_text:
-                    analysis_text = current_text
-                    print(f"✅ Gemini success on attempt {attempt + 1}")
-                    
-                    # 2. SECONDARY BLUESKY NOTE GENERATION (Runs only if briefing succeeds)
-                    try:
-                        note_prompt = f"""
-                                You are a social media manager for a high-level scientific lab. 
-                                Your task is to write a concise Bluesky teaser based on the provided research briefing.
-                                
-                                STRICT CONSTRAINTS:
-                                
-                                - OPENING: Always begin with "Daily #mtDNA intel:"
-                                - VOICE: Use an objective, third-person "Digest" voice. DO NOT use "we", "our", or "my". 
-                                - FORMAT: Use a ticker-style format with bullets for 2-3 key findings. 
-                                  Example: "Daily #mtDNA intel: • Discovery A • New mechanism in B • Insight on C"
-                                - HASHTAGS: Place essential hashtags at the very end if place allows or better integrate them into the text to save characters. avoid long hashtags
-                                - EMOJIS: Use 1-2 relevant emojis (like 🧬 or 🔬) but keep it professional.
-                                - The output should only contain the teaser text. Under no circumstances add the charater count or any other additional information into the teaser and output!!
-                                - CHARACTER LIMIT: The total output must be under 200 characters, no exception!!!!!
-                                - Check again, remove everything from the output that should not appear on Bluesky. For example remove something like "(189 characters)" or "(189/200 chars) or similar. Don't put it into the output.
-                                
-                                CONTENT FOCUS:
-                                - Prioritize technical clarity and significant molecular findings.
-                                - Do not mention the number of characters used.
-                                - Do not add meta-commentary (e.g., "Here is your post:").
-                                
-                                Briefing: {analysis_text[:1500]}
-                                """
-                        note_resp = client.models.generate_content(model="gemini-flash-latest", contents=note_prompt)
-                        
-                        generated_note = getattr(note_resp, 'text', "").strip()
-                        if generated_note:
-                            bluesky_note = generated_note
-                            print("📝 Bluesky social note generated successfully.")
-                    except Exception as b_e:
-                        print(f"⚠️ Social note generation failed (skipping): {b_e}")
-                    
-                    break # Success! Exit the retry loop.
-                else:
-                    print(f"⚠️ Attempt {attempt + 1}: Gemini returned empty text.")
                     
             except Exception as e:
                 error_msg = str(e)
@@ -419,9 +343,6 @@ if __name__ == "__main__":
         if not analysis_text:
             analysis_text = "## ⚠️ AI Analysis Unavailable\nGemini was overloaded. Please see the full audit list below."
 
-        # SAVE THE NOTE FOR THE EVENING ACTION
-        with open("bluesky_note_general.txt", "w", encoding="utf-8") as f:
-            f.write(bluesky_note)
 
         # GENERATE PDF AND UPLOAD
         pdf_file = generate_pdf(analysis_text + audit_table)
@@ -433,7 +354,6 @@ if __name__ == "__main__":
         
         # This will show up in GitHub logs so you can find the ID if needed
         print(f"📄 Morning PDF File ID: {file_id}")
-        print("💾 Bluesky note saved to local file.")
         print("✅ Morning Briefing Complete!")
         print("✅ Done!")
     else:

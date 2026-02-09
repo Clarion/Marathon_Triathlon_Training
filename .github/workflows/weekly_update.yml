@@ -12,7 +12,6 @@ permissions:
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
   GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
-  GDRIVE_FOLDER_LINK: ${{ secrets.GDRIVE_FOLDER_LINK }}
 
 jobs:
   pipeline:

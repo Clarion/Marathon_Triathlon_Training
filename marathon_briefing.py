@@ -49,7 +49,7 @@ def get_google_creds():
 def fetch_pubmed_data():
     print("📡 Querying PubMed...")
     Entrez.email = EMAIL
-    date_tag = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime("%Y/%m/%d")
+    date_tag = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y/%m/%d")
     query = f"{SEARCH_TERM_PUBMED} AND {date_tag}[pdat]"
     try:
         handle = Entrez.esearch(db="pubmed", term=query, retmax=40)
@@ -80,7 +80,7 @@ def fetch_pubmed_data():
 def fetch_biorxiv_data():
     print("🧬 Querying bioRxiv...")
     today = datetime.date.today()
-    start_date = (today - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+    start_date = (today - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
     url = f"https://api.biorxiv.org/details/biorxiv/{start_date}/{today.strftime('%Y-%m-%d')}/0/json"
     try:
         response = requests.get(url, timeout=30)

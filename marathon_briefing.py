@@ -321,13 +321,18 @@ if __name__ == "__main__":
         
         max_retries = 2
         analysis_text = ""
-
         for attempt in range(max_retries):
             try:
                 # 1. PRIMARY BRIEFING GENERATION
                 response = client.models.generate_content(model="gemini-flash-latest", contents=prompt)
                 current_text = getattr(response, 'text', "")
                 
+                if current_text:
+                    analysis_text = current_text  # <--- ADD THIS LINE
+                    print(f"✅ Gemini success on attempt {attempt + 1}")
+                    break  # <--- ADD THIS TO EXIT THE LOOP ON SUCCESS
+                else:
+                    print(f"⚠️ Attempt {attempt + 1}: Gemini returned empty text.")
                     
             except Exception as e:
                 error_msg = str(e)

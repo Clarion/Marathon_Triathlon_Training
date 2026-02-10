@@ -286,7 +286,10 @@ if __name__ == "__main__":
 
         
         prompt = f"""
-        You are a specialized Research Assistant for  Endurance Running Training {INTERESTS}.
+        You are a specialized Research Assistant for  Endurance Running Training {INTERESTS}. You should look into the collection of papers and primary ask the question:
+        What makes a endurance athlete excel? What training is particularly useful? What kind of athletes benefit from certain training approaches? Is there a difference
+        depending on the age of an athlete, sex or experience? Also look into the benefits of recovery and nutrition and how they contribute to performance improvement.
+        Is there perhaps a study that suggest to include something in the training routine?
 
         STRICT REFERENCING RULE:
         - When discussing a paper in any section, you MUST refer to it by its index number (e.g., **Paper #27**).
@@ -297,12 +300,7 @@ if __name__ == "__main__":
         - Use bold **[MECHANISM]** tags for molecular pathways.
         - Label bioRxiv papers clearly as [PREPRINT].
         - DORA COMPLIANCE: Do not include Impact Factors (IF) or numerical Rank columns. 
-        - Instead, sort the Summary Table by biological relevance to {INTERESTS}, placing the most significant discoveries at the top.
-        - Remain neutral in the wording and for example don't refer to something as "the most significant finding of today's search". Still focus on the most relevant papers.
-
-        CRITICAL CONTENT RULES:
-        - Maintain high-density, professional scientific terminology.
-        - Start the 'Briefing' immediately with the most impactful discovery (without specifically saying it is the most significant finding)
+        - Instead, sort the Summary Table by relevance to {INTERESTS} and the questions written down at the start of the prompt, placing the most significant discoveries at the top.
 
         TASK:
         1. SUMMARY TABLE: Markdown table with [Title, Source, Model System, Paper #]. 

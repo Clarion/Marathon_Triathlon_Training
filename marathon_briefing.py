@@ -45,11 +45,12 @@ def get_google_creds():
             token.write(creds.to_json())
     return creds
 
-def fetch_pubmed_data():
-    print("📡 Querying PubMed...")
+def fetch_pubmed_data(start_date, end_date):
+    """start_date and end_date should be strings in YYYY/MM/DD format"""
+    print(f"📡 Querying PubMed for period {start_date} to {end_date}...")
+    
     Entrez.email = EMAIL
-    date_tag = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y/%m/%d")
-    query = f'{SEARCH_TERM_PUBMED} AND (("{date_tag}"[Date - Publication] : "3000"[Date - Publication]))'
+    query = f'{SEARCH_TERM_PUBMED} AND ("{start_date}"[Date - Publication] : "{end_date}"[Date - Publication])'
     try:
         handle = Entrez.esearch(db="pubmed", term=query, retmax=40)
         record = Entrez.read(handle)
@@ -76,11 +77,10 @@ def fetch_pubmed_data():
     except Exception as e:
         print(f"PubMed Error: {e}"); return []
 
-def fetch_biorxiv_data():
-    print("🧬 Querying bioRxiv...")
-    today = datetime.date.today()
-    start_date = (today - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
-    url = f"https://api.biorxiv.org/details/biorxiv/{start_date}/{today.strftime('%Y-%m-%d')}/0/json"
+def fetch_biorxiv_data(start_date, end_date):
+    """start_date and end_date should be strings in YYYY-MM-DD format"""
+    print(f"🧬 Querying bioRxiv for period {start_date} to {end_date}...")
+    url = f"https://api.biorxiv.org/details/biorxiv/{start_date}/{end_date}/0/json"
     try:
         response = requests.get(url, timeout=30)
         data = response.json()
@@ -103,9 +103,10 @@ def fetch_biorxiv_data():
 def fetch_data():
     return fetch_pubmed_data() + fetch_biorxiv_data()
 
-def generate_pdf(markdown_text):
+def generate_pdf(markdown_text, target_date):
     print("🎨 Generating PDF with Header Banner and Running Footer...")
-    
+    date_str = target_date.strftime('%Y-%m-%d')
+
     # Convert markdown to HTML
     html_body = markdown2.markdown(markdown_text, extras=["tables", "html-classes"])
     
@@ -197,7 +198,7 @@ def generate_pdf(markdown_text):
 
         <h1>Weekly Endurance Training Intelligence Dossier</h1>
         <p style="font-size: 10px; color: #666; margin-bottom: 20px;">
-            Generated on: {datetime.date.today().strftime('%B %d, %Y')}
+            Generated for week ending: {target_date.strftime('%B %d, %Y')}
         </p>
         
         <div class="main-content">
@@ -207,27 +208,30 @@ def generate_pdf(markdown_text):
     """
     
     today_str = datetime.date.today().strftime('%Y-%m-%d')
-    filename = f"Marathon_Briefing_{today_str}.pdf"
+    filename = f"Marathon_Archive_{date_str}.pdf"
     
     # Generate PDF
     HTML(string=html_template).write_pdf(filename)
     print(f"✅ PDF '{filename}' generated successfully.")
     return filename
 
-def get_or_create_monthly_folder(service, parent_id):
-    month_year = datetime.date.today().strftime("%B %Y")
+def get_or_create_monthly_folder(service, parent_id, target_date):
+    # Use the target_date for the folder name, not today's date
+    month_year = target_date.strftime("%B %Y")
     query = f"name='{month_year}' and '{parent_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-    results = service.files().list(q=query, fields="files(id)").execute()
+    results = service.files().list(q=query).execute()
     items = results.get('files', [])
     if items: return items[0]['id']
+    
     folder_metadata = {'name': month_year, 'parents': [parent_id], 'mimeType': 'application/vnd.google-apps.folder'}
     folder = service.files().create(body=folder_metadata, fields='id').execute()
     return folder.get('id')
 
-def upload_to_drive(file_path, creds):
+def upload_to_drive(file_path, creds, target_date):
     print("📤 Uploading to Google Drive...")
     service = build('drive', 'v3', credentials=creds)
-    target_folder_id = get_or_create_monthly_folder(service, FOLDER_ID)
+    # Pass target_date so it goes to the correct historical month folder
+    target_folder_id = get_or_create_monthly_folder(service, FOLDER_ID, target_date)
     media = MediaFileUpload(file_path, mimetype='application/pdf')
     file_metadata = {'name': os.path.basename(file_path), 'parents': [target_folder_id]}
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
@@ -270,93 +274,102 @@ def crop_for_social(b64_string):
 
 
 if __name__ == "__main__":
-    papers = fetch_data()
-    if papers:
-        paper_block = ""
-        for i, p in enumerate(papers, 1):
-            paper_block += f"--- ITEM #{i} ---\nTITLE: {p['title']}\nJOURNAL: {p['journal']}\nAUTHORS: {p['authors']}\nLINK: {p['link']}\nABSTRACT: {p['abstract']}\n\n"
-
-        audit_table = "<div class='audit-section'>\n\n## 📂 Full Search Audit\n| # | Journal | Authors | Title | Source |\n| :--- | :--- | :--- | :--- | :--- |\n"
-        for i, p in enumerate(papers, 1):
-            lbl = "PubMed" if "pubmed" in p['link'] else "bioRxiv"
-            audit_table += f"| {i} | {p['journal']} | {p['authors']} | {p['title']} | [{lbl}]({p['link']}) |\n"
-        audit_table += "</div>"
-
-
+    creds = get_google_creds() # Get creds once at the start
+    for week_back in range(1):
+        end_dt = datetime.datetime.now() - datetime.timedelta(weeks=week_back)
+        start_dt = end_dt - datetime.timedelta(days=7)
         
-        prompt = f"""
-        You are a specialized Research Assistant for  Endurance Running Training {INTERESTS}. You should look into the collection of papers and primary ask the question:
-        What makes a endurance athlete excel? What training is particularly useful? What kind of athletes benefit from certain training approaches? Is there a difference
-        depending on the age of an athlete, sex or experience? Also look into the benefits of recovery and nutrition and how they contribute to performance improvement.
-        Is there perhaps a study that suggest to include something in the training routine?
-
-        STRICT REFERENCING RULE:
-        - When discussing a paper in any section, you MUST refer to it by its index number (e.g., **Paper #27**).
-        - Verify that titles and authors match the index number precisely.
-
-        FORMATTING & COMPLIANCE RULES:
-        - Use ## Headings for each section.
-        - Use bold **[MECHANISM]** tags for molecular pathways.
-        - Label bioRxiv papers clearly as [PREPRINT].
-        - DORA COMPLIANCE: Do not include Impact Factors (IF) or numerical Rank columns. 
-        - Instead, sort the Summary Table by relevance to {INTERESTS} and the questions written down at the start of the prompt, placing the most significant discoveries at the top.
-
-        TASK:
-        1. SUMMARY TABLE: Markdown table with [Title, Source, Model System, Paper #]. 
-           - 'Source' should be the Journal or bioRxiv.
-           - Sort items by perceived impact based on {INTERESTS}
-        2. SCIENTIFIC BRIEFING: 3 concise paragraphs (Executive Summary, Mechanistic Deep-Dive, Future Directions/Implications).
-        3. DETAILED INSIGHTS: For the top relevant papers, provide its number (e.g., **Paper #5**), a 1-sentence 'Takeaway', and the abstract.
-
-        DATA:
-        {paper_block}
-        """
-        # SAVE FOR DEBUGGING
-        with open("debug_prompt.txt", "w", encoding="utf-8") as f:
-            f.write(prompt)
-        print("📝 Debug prompt saved to debug_prompt.txt")
+        pm_start = start_dt.strftime("%Y/%m/%d")
+        pm_end = end_dt.strftime("%Y/%m/%d")
+        br_start = start_dt.strftime("%Y-%m-%d")
+        br_end = end_dt.strftime("%Y-%m-%d")
         
-        max_retries = 2
-        analysis_text = ""
-        for attempt in range(max_retries):
-            try:
-                # 1. PRIMARY BRIEFING GENERATION
-                response = client.models.generate_content(model="gemini-flash-latest", contents=prompt)
-                current_text = getattr(response, 'text', "")
-                
-                if current_text:
-                    analysis_text = current_text  # <--- ADD THIS LINE
-                    print(f"✅ Gemini success on attempt {attempt + 1}")
-                    break  # <--- ADD THIS TO EXIT THE LOOP ON SUCCESS
-                else:
-                    print(f"⚠️ Attempt {attempt + 1}: Gemini returned empty text.")
+        print(f"\n🚀 --- PROCESSING WEEK {week_back + 1}/52 ({pm_start}) ---")
+        
+        # Pass the dates to your fetch functions
+        papers = fetch_pubmed_data(pm_start, pm_end) + fetch_biorxiv_data(br_start, br_end)
+    
+        if papers:
+            paper_block = ""
+            for i, p in enumerate(papers, 1):
+                paper_block += f"--- ITEM #{i} ---\nTITLE: {p['title']}\nJOURNAL: {p['journal']}\nAUTHORS: {p['authors']}\nLINK: {p['link']}\nABSTRACT: {p['abstract']}\n\n"
+    
+            audit_table = "<div class='audit-section'>\n\n## 📂 Full Search Audit\n| # | Journal | Authors | Title | Source |\n| :--- | :--- | :--- | :--- | :--- |\n"
+            for i, p in enumerate(papers, 1):
+                lbl = "PubMed" if "pubmed" in p['link'] else "bioRxiv"
+                audit_table += f"| {i} | {p['journal']} | {p['authors']} | {p['title']} | [{lbl}]({p['link']}) |\n"
+            audit_table += "</div>"
+    
+    
+            
+            prompt = f"""
+            You are a specialized Research Assistant for  Endurance Running Training {INTERESTS}. You should look into the collection of papers and primary ask the question:
+            What makes a endurance athlete excel? What training is particularly useful? What kind of athletes benefit from certain training approaches? Is there a difference
+            depending on the age of an athlete, sex or experience? Also look into the benefits of recovery and nutrition and how they contribute to performance improvement.
+            Is there perhaps a study that suggest to include something in the training routine?
+    
+            STRICT REFERENCING RULE:
+            - When discussing a paper in any section, you MUST refer to it by its index number (e.g., **Paper #27**).
+            - Verify that titles and authors match the index number precisely.
+    
+            FORMATTING & COMPLIANCE RULES:
+            - Use ## Headings for each section.
+            - Use bold **[MECHANISM]** tags for molecular pathways.
+            - Label bioRxiv papers clearly as [PREPRINT].
+            - DORA COMPLIANCE: Do not include Impact Factors (IF) or numerical Rank columns. 
+            - Instead, sort the Summary Table by relevance to {INTERESTS} and the questions written down at the start of the prompt, placing the most significant discoveries at the top.
+    
+            TASK:
+            1. SUMMARY TABLE: Markdown table with [Title, Source, Model System, Paper #]. 
+               - 'Source' should be the Journal or bioRxiv.
+               - Sort items by perceived impact based on {INTERESTS}
+            2. SCIENTIFIC BRIEFING: 3 concise paragraphs (Executive Summary, Mechanistic Deep-Dive, Future Directions/Implications).
+            3. DETAILED INSIGHTS: For the top relevant papers, provide its number (e.g., **Paper #5**), a 1-sentence 'Takeaway', and the abstract.
+    
+            DATA:
+            {paper_block}
+            """
+            # SAVE FOR DEBUGGING
+            with open("debug_prompt.txt", "w", encoding="utf-8") as f:
+                f.write(prompt)
+            print("📝 Debug prompt saved to debug_prompt.txt")
+            
+            max_retries = 2
+            analysis_text = ""
+            for attempt in range(max_retries):
+                try:
+                    # 1. PRIMARY BRIEFING GENERATION
+                    response = client.models.generate_content(model="gemini-flash-latest", contents=prompt)
+                    current_text = getattr(response, 'text', "")
                     
-            except Exception as e:
-                error_msg = str(e)
-                print(f"❌ Gemini Attempt {attempt + 1} Error: {error_msg}")
-                
-                if "503" in error_msg and attempt < max_retries - 1:
-                    print("⏳ Server overloaded. Initiating 15-minute incubation...")
-                    time.sleep(900)
-                else:
-                    break
-        
-        # Final Fallback for Analysis
-        if not analysis_text:
-            analysis_text = "## ⚠️ AI Analysis Unavailable\nGemini was overloaded. Please see the full audit list below."
-
-
-        # GENERATE PDF AND UPLOAD
-        pdf_file = generate_pdf(analysis_text + audit_table)
-        creds = get_google_creds()
-        file_id = upload_to_drive(pdf_file, creds)
-        
-        pdf_public_url = f"https://drive.google.com/file/d/{file_id}/view"
-
-        
-        # This will show up in GitHub logs so you can find the ID if needed
-        print(f"📄 Morning PDF File ID: {file_id}")
-        print("✅ Morning Briefing Complete!")
-        print("✅ Done!")
-    else:
-        print("📭 No papers.")
+                    if current_text:
+                        analysis_text = current_text  # <--- ADD THIS LINE
+                        print(f"✅ Gemini success on attempt {attempt + 1}")
+                        break  # <--- ADD THIS TO EXIT THE LOOP ON SUCCESS
+                    else:
+                        print(f"⚠️ Attempt {attempt + 1}: Gemini returned empty text.")
+                        
+                except Exception as e:
+                    error_msg = str(e)
+                    print(f"❌ Gemini Attempt {attempt + 1} Error: {error_msg}")
+                    
+                    if "503" in error_msg and attempt < max_retries - 1:
+                        print("⏳ Server overloaded. Initiating 15-minute incubation...")
+                        time.sleep(900)
+                    else:
+                        break
+            
+            # Final Fallback for Analysis
+            if not analysis_text:
+                analysis_text = "## ⚠️ AI Analysis Unavailable\nGemini was overloaded. Please see the full audit list below."
+    
+    
+            # GENERATE PDF AND UPLOAD
+            pdf_file = generate_pdf(analysis_text + audit_table, end_dt)
+            file_id = upload_to_drive(pdf_file, creds, end_dt)
+            
+            print(f"✅ Week {week_back + 1} finalized (ID: {file_id}).")
+            time.sleep(5) # Rate limiting for Gemini
+            
+        else:
+            print("📭 No papers.")

@@ -2,7 +2,7 @@ name: Marathon Intelligence Pipeline
 
 on:
   schedule:
-    - cron: '7 4 * * *'   #(Morning Research - Lab)
+    - cron: '7 4 * * 2'   #(Morning Research - Lab)
   workflow_dispatch:      # Allows manual trigger
 
 permissions:
@@ -38,5 +38,5 @@ jobs:
       # ---------------------------------------------------------
 
       - name: Run General Social Update
-        if: github.event.schedule == '7 4 * * *' || github.event_name == 'workflow_dispatch'
+        if: github.event.schedule == '7 4 * * 2' || github.event_name == 'workflow_dispatch'
         run: python marathon_briefing.py

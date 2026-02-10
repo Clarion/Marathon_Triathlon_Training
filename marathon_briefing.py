@@ -188,14 +188,14 @@ def generate_pdf(markdown_text):
     
     <body>
         <footer>
-            <strong>Source & Methodology:</strong> Automated digest provided by the Osman lab. PubMed/bioRxiv query: "mtDNA" (past 48h).<br>
-            <strong>AI Disclosure:</strong> Synthesis by Gemini (Google AI) focused on mtDNA QC and copy number regulation. 
-            Preprints are marked as preliminary. Verify all findings via provided primary links.
+            <strong>Source & Methodology:</strong> Automated digest. PubMed/bioRxiv query: "endurance training, marathon, triathlon, ironman, cycling" (past 7d).<br>
+            <strong>AI Disclosure:</strong> Synthesis by Gemini (Google AI) focused on training. 
+            Verify all findings via provided primary links.
         </footer>
 
         <img src="{BANNER_IMAGE}" class="header-img">
 
-        <h1>mtDNA Daily Intelligence Dossier</h1>
+        <h1>Weekly Endurance Training Intelligence Dossier</h1>
         <p style="font-size: 10px; color: #666; margin-bottom: 20px;">
             Generated on: {datetime.date.today().strftime('%B %d, %Y')}
         </p>

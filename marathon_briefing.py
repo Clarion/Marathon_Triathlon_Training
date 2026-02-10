@@ -275,7 +275,7 @@ def crop_for_social(b64_string):
 
 if __name__ == "__main__":
     creds = get_google_creds() # Get creds once at the start
-    for week_back in range(52):
+    for week_back in range(1):
         end_dt = datetime.datetime.now() - datetime.timedelta(weeks=week_back)
         start_dt = end_dt - datetime.timedelta(days=7)
         

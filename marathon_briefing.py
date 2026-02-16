@@ -27,7 +27,7 @@ INTERESTS = os.getenv("INTERESTS")
 LAB = os.getenv("LAB")
 MAIN_TOPIC = os.getenv("MAIN_TOPIC")
 MAX_ARTICLES = os.getenv("MAX_ARTICLES")
-PROMPT_TEMPLATE_LAB = os.getenv("PROMPT_TEMPLATE_LAB")
+PROMPT = os.getenv("PROMPT")
 SEARCH_TERM_PUBMED = os.getenv("SEARCH_TERM_PUBMED")
 SEARCH_TERM_BIORXIV = os.getenv("SEARCH_TERM_BIORXIV")
 SEARCH_WINDOW = os.getenv("SEARCH_WINDOW")
@@ -306,36 +306,8 @@ if __name__ == "__main__":
                 lbl = "PubMed" if "pubmed" in p['link'] else "bioRxiv"
                 audit_table += f"| {i} | {p['journal']} | {p['authors']} | {p['title']} | [{lbl}]({p['link']}) |\n"
             audit_table += "</div>"
-    
-    
             
-            prompt = f"""
-            You are a specialized Research Assistant for  Endurance Running Training {INTERESTS}. You should look into the collection of papers and primary ask the question:
-            What makes a endurance athlete excel? What training is particularly useful? What kind of athletes benefit from certain training approaches? Is there a difference
-            depending on the age of an athlete, sex or experience? Also look into the benefits of recovery and nutrition and how they contribute to performance improvement.
-            Is there perhaps a study that suggest to include something in the training routine?
-    
-            STRICT REFERENCING RULE:
-            - When discussing a paper in any section, you MUST refer to it by its index number (e.g., **Paper #27**).
-            - Verify that titles and authors match the index number precisely.
-    
-            FORMATTING & COMPLIANCE RULES:
-            - Use ## Headings for each section.
-            - Use bold **[MECHANISM]** tags for molecular pathways.
-            - Label bioRxiv papers clearly as [PREPRINT].
-            - DORA COMPLIANCE: Do not include Impact Factors (IF) or numerical Rank columns. 
-            - Instead, sort the Summary Table by relevance to {INTERESTS} and the questions written down at the start of the prompt, placing the most significant discoveries at the top.
-    
-            TASK:
-            1. SUMMARY TABLE: Markdown table with [Title, Source, Model System, Paper #]. 
-               - 'Source' should be the Journal or bioRxiv.
-               - Sort items by perceived impact based on {INTERESTS}
-            2. SCIENTIFIC BRIEFING: 3 concise paragraphs (Executive Summary, Mechanistic Deep-Dive, Future Directions/Implications).
-            3. DETAILED INSIGHTS: For the top relevant papers, provide its number (e.g., **Paper #5**), a 1-sentence 'Takeaway', and the abstract.
-    
-            DATA:
-            {paper_block}
-            """
+            prompt = f"{PROMPT_TEMPLATE_LAB}\nDATA:\n{paper_block}"
             # SAVE FOR DEBUGGING
             with open("debug_prompt.txt", "w", encoding="utf-8") as f:
                 f.write(prompt)

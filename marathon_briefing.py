@@ -307,7 +307,7 @@ if __name__ == "__main__":
                 audit_table += f"| {i} | {p['journal']} | {p['authors']} | {p['title']} | [{lbl}]({p['link']}) |\n"
             audit_table += "</div>"
             
-            prompt = f"{PROMPT_TEMPLATE_LAB}\nDATA:\n{paper_block}"
+            prompt = f"{PROMPT}\nDATA:\n{paper_block}"
             # SAVE FOR DEBUGGING
             with open("debug_prompt.txt", "w", encoding="utf-8") as f:
                 f.write(prompt)

@@ -93,7 +93,7 @@ def fetch_biorxiv_data(start_date, end_date):
         data = response.json()
         if 'collection' not in data: return []
         results = []
-        keywords = ["marathon", "triathlon", "ironman", "endurance running", "ultramarathon", "cycling"]
+        keywords = [k.lower() for k in [item.strip() for item in SEARCH_TERM_BIORXIV.split(",")] if k.strip()]
         for entry in data['collection']:
             text = (entry['title'] + entry['abstract']).lower()
             if any(k in text for k in keywords):
@@ -196,14 +196,14 @@ def generate_pdf(markdown_text, target_date):
     
     <body>
         <footer>
-            <strong>Source & Methodology:</strong> Automated digest. PubMed/bioRxiv query: "endurance training, marathon, triathlon, ironman, cycling" (past 7d).<br>
+            <strong>Source & Methodology:</strong> Automated digest. PubMed/bioRxiv query: "{SEARCH_TERM_BIORXIV}" (past {SEARCH_WINDOW}d).<br>
             <strong>AI Disclosure:</strong> Synthesis by Gemini (Google AI) focused on training. 
             Verify all findings via provided primary links.
         </footer>
 
         <img src="{BANNER_IMAGE}" class="header-img">
 
-        <h1>Weekly Endurance Training Intelligence Dossier</h1>
+        <h1>Weekly {MAIN_TOPIC} Intelligence Dossier</h1>
         <p style="font-size: 10px; color: #666; margin-bottom: 20px;">
             Generated for week ending: {target_date.strftime('%B %d, %Y')}
         </p>

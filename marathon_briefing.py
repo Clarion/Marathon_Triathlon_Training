@@ -86,7 +86,7 @@ def fetch_biorxiv_data(start_date, end_date):
         data = response.json()
         if 'collection' not in data: return []
         results = []
-        keywords = ["marathon", "triathlon", "ironman"]
+        keywords = ["marathon", "triathlon", "ironman", "endurance running", "ultramarathon", "cycling"]
         for entry in data['collection']:
             text = (entry['title'] + entry['abstract']).lower()
             if any(k in text for k in keywords):

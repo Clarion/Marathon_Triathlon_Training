@@ -12,17 +12,17 @@ permissions:
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
   GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
-  SEARCH_TERM_PUBMED: ${{ vars.SEARCH_TERM_PUBMED }}
-
-  SEARCH_TERM_BIORXIV: ${{ vars.SEARCH_TERM_BIORXIV }}
+  BRIEFING_FOCUS: ${{ vars.BRIEFING_FOCUS }}
+  EMAIL: ${{ vars.EMAIL }}
   FOLDER: ${{ vars.FOLDER }}
   INTERESTS: ${{ vars.INTERESTS }}
-  BRIEFING_FOCUS: ${{ vars.BRIEFING_FOCUS }}
+  LAB: ${{ vars.LAB }}
   MAIN_TOPIC: ${{ vars.MAIN_TOPIC }}
   MAX_ARTICLES: ${{ vars.MAX_ARTICLES }}
+  PROMPT: ${{ vars.PROMPT }}
+  SEARCH_TERM_PUBMED: ${{ vars.SEARCH_TERM_PUBMED }}
+  SEARCH_TERM_BIORXIV: ${{ vars.SEARCH_TERM_BIORXIV }}
   SEARCH_WINDOW: ${{ vars.SEARCH_WINDOW }}
-  LAB: ${{ vars.LAB }}
-  EMAIL: ${{ vars.EMAIL }}
 
 jobs:
   pipeline:

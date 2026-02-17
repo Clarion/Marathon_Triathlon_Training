@@ -197,7 +197,7 @@ def generate_pdf(markdown_text, target_date):
     
     <body>
         <footer>
-            <strong>Source & Methodology:</strong> Automated digest. PubMed/bioRxiv query: "{SEARCH_TERM_BIORXIV}" (past {SEARCH_WINDOW}d).<br>
+            <strong>Source & Methodology:</strong> Automated digest. PubMed/bioRxiv query: "{SEARCH_TERM_BIORXIV}" (past 7d).<br>
             <strong>AI Disclosure:</strong> Synthesis by Gemini (Google AI) focused on training. 
             Verify all findings via provided primary links.
         </footer>

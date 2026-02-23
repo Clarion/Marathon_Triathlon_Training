@@ -57,7 +57,7 @@ def fetch_pubmed_data(start_date, end_date):
     print(f"📡 Querying PubMed for period {start_date} to {end_date}...")
     
     Entrez.email = EMAIL
-    query = f'{SEARCH_TERM_PUBMED} AND ("{start_date}"[Date - Publication] : "3000"[Date - Publication])'
+    query = f'{SEARCH_TERM_PUBMED} AND (("{date_tag}"[Date - Entrez] : "3000"[Date - Entrez]))'
     print(f"Looking for {query}")
     try:
         handle = Entrez.esearch(db="pubmed", term=query, retmax=int(MAX_ARTICLES))
